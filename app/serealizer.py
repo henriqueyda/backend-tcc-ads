@@ -1,5 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow import fields
+
 from .models import Product
 
 marshmallow = Marshmallow()
