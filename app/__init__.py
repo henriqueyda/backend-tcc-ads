@@ -1,8 +1,9 @@
 from flask import Flask
-from config import Config
 from flask_migrate import Migrate
+
 from .models import configure as config_db
-from .serealizer import configure as config_ma
+from .schemas import configure as config_ma
+from config import Config
 
 
 def create_app():

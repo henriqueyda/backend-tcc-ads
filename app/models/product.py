@@ -1,11 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
-
-
-def configure(app):
-    db.init_app(app)
-    app.db = db
+from ..models import db
 
 
 class Product(db.Model):
