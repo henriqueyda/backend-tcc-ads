@@ -3,7 +3,6 @@ from datetime import datetime
 from flask import Blueprint
 from flask import current_app
 from flask import request
-from flask_cors import cross_origin
 
 from ..schemas.product import ProductSchema
 from app.models.product import Product
@@ -12,7 +11,6 @@ blueprint_product = Blueprint("product", __name__, url_prefix="/product")
 
 
 @blueprint_product.route("/", methods=["GET"])
-@cross_origin()
 def get_all():
     product_schema = ProductSchema(many=True)
     result = Product.query.all()
@@ -20,7 +18,6 @@ def get_all():
 
 
 @blueprint_product.route("/<product_id>", methods=["GET"])
-@cross_origin()
 def get_one(product_id):
     product_schema = ProductSchema()
     result = Product.query.get_or_404(product_id)
@@ -28,7 +25,6 @@ def get_one(product_id):
 
 
 @blueprint_product.route("/<product_id>", methods=["DELETE"])
-@cross_origin()
 def delete(product_id):
     result = Product.query.get_or_404(product_id)
     current_app.db.session.delete(result)
@@ -37,7 +33,6 @@ def delete(product_id):
 
 
 @blueprint_product.route("/<product_id>", methods=["PUT"])
-@cross_origin()
 def update(product_id):
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
@@ -49,7 +44,6 @@ def update(product_id):
 
 
 @blueprint_product.route("/", methods=["POST"])
-@cross_origin()
 def create():
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
