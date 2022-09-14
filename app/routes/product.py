@@ -36,7 +36,7 @@ def delete(product_id):
 def update(product_id):
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
-    request.json["expiration_date"] = datetime.strptime(date, "%Y-%m-%d")
+    request.json["expiration_date"] = datetime.strptime(date, "%d/%m/%Y")
     result = Product.query.filter(Product.id == product_id)
     result.update(request.json)
     current_app.db.session.commit()
@@ -47,7 +47,7 @@ def update(product_id):
 def create():
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
-    request.json["expiration_date"] = datetime.strptime(date, "%Y-%m-%d")
+    request.json["expiration_date"] = datetime.strptime(date, "%d/%m/%Y")
     product = Product(**request.json)
     current_app.db.session.add(product)
     current_app.db.session.commit()
