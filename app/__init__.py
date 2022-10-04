@@ -15,7 +15,7 @@ def create_app():
     config_db(app)
     config_ma(app)
 
-    Migrate(app, app.db)
+    Migrate(app, app.db, compare_type=True)
 
     from .routes.product import blueprint_product
 

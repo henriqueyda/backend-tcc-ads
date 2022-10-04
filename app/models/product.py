@@ -1,3 +1,5 @@
+from sqlalchemy_utils import URLType
+
 from ..models import db
 
 
@@ -9,3 +11,5 @@ class Product(db.Model):
     color = db.Column(db.String(255))
     expiration_date = db.Column(db.Date)
     quantity = db.Column(db.Integer)
+    picture = db.Column(URLType)
+    price = db.Column(db.Numeric(10, 2))

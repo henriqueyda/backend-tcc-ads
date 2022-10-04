@@ -15,3 +15,5 @@ class ProductSchema(marshmallow.Schema):
     color = fields.String()
     expiration_date = fields.Date(format="%d/%m/%Y")
     quantity = fields.Integer()
+    picture = fields.URL()
+    price = fields.Float()
