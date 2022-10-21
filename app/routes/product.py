@@ -18,11 +18,12 @@ def index():
     limit = request.args.get("limit", 10, type=int)
     product_schema = ProductSchema(many=True)
     result = Product.query.paginate(page=page, per_page=limit)
+    iter_pages = [page_num for page_num in result.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2)]
     return {
         "total": result.total,
         "page": result.page,
         "limit": result.per_page,
-        "count": len(result.items),
+        "iter_pages": iter_pages,
         "products": product_schema.dump(result.items),
     }, 200
 
@@ -67,10 +68,11 @@ def create():
 @blueprint_product.route("/populate/", methods=["GET"])
 def populate():
     inspector = sa.inspect(current_app.db.engine)
+    samples = request.args.get("samples", 30, type=int)
     if inspector.has_table("product"):
         Product.__table__.drop(current_app.db.engine)
     Product.__table__.create(current_app.db.engine)
-    for product in ProductFactory.build_batch(30):
+    for product in ProductFactory.build_batch(samples):
         current_app.db.session.add(product)
         current_app.db.session.commit()
     return {"message": "Product table populated!"}, 200
