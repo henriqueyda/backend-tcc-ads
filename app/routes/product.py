@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 
 from flask import Blueprint
 from flask import current_app
@@ -16,8 +17,18 @@ blueprint_product = Blueprint("product", __name__, url_prefix="/product")
 def index():
     page = request.args.get("page", 1, type=int)
     limit = request.args.get("limit", 10, type=int)
+    filters = []
+    category_name = request.args.get("category_name", type=str)
+    if category_name:
+        filters.append(partial(Product.category.has, name=category_name)())
+    category_id = request.args.get("category_id", type=str)
+    if category_id:
+        filters.append(partial(Product.category_id.__eq__, category_id)())
+    name = request.args.get("name", type=str)
+    if name:
+        filters.append(partial(Product.name.like, "Their purpose between.")())
     product_schema = ProductSchema(many=True)
-    result = Product.query.paginate(page=page, per_page=limit)
+    result = Product.query.filter(*filters).paginate(page=page, per_page=limit)
     iter_pages = [
         page_num
         for page_num in result.iter_pages(

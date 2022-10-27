@@ -17,3 +17,4 @@ class ProductSchema(marshmallow.Schema):
     quantity = fields.Integer()
     picture = fields.URL()
     price = fields.Float()
+    category_id = fields.Integer()
