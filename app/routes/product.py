@@ -7,7 +7,9 @@ from flask import request
 
 from ..models.model_factory import CategoryFactory
 from ..models.model_factory import ProductFactory
+from ..schemas.product import CategorySchema
 from ..schemas.product import ProductSchema
+from app.models.product import Category
 from app.models.product import Product
 
 blueprint_product = Blueprint("product", __name__, url_prefix="/product")
@@ -79,6 +81,13 @@ def create():
     current_app.db.session.add(product)
     current_app.db.session.commit()
     return product_schema.jsonify(product), 201
+
+
+@blueprint_product.route("/categories", methods=["GET"])
+def index_category():
+    category_schema = CategorySchema(many=True)
+    result = Category.query.all()
+    return category_schema.jsonify(result), 200
 
 
 @blueprint_product.route("/populate/", methods=["GET"])
