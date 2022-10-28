@@ -1,12 +1,15 @@
 from datetime import datetime
+from functools import partial
 
-import sqlalchemy as sa
 from flask import Blueprint
 from flask import current_app
 from flask import request
 
+from ..models.model_factory import CategoryFactory
 from ..models.model_factory import ProductFactory
+from ..schemas.product import CategorySchema
 from ..schemas.product import ProductSchema
+from app.models.product import Category
 from app.models.product import Product
 
 blueprint_product = Blueprint("product", __name__, url_prefix="/product")
@@ -16,9 +19,24 @@ blueprint_product = Blueprint("product", __name__, url_prefix="/product")
 def index():
     page = request.args.get("page", 1, type=int)
     limit = request.args.get("limit", 10, type=int)
+    filters = []
+    category_name = request.args.get("category_name", type=str)
+    if category_name:
+        filters.append(partial(Product.category.has, name=category_name)())
+    category_id = request.args.get("category_id", type=str)
+    if category_id:
+        filters.append(partial(Product.category_id.__eq__, category_id)())
+    name = request.args.get("name", type=str)
+    if name:
+        filters.append(partial(Product.name.like, "Their purpose between.")())
     product_schema = ProductSchema(many=True)
-    result = Product.query.paginate(page=page, per_page=limit)
-    iter_pages = [page_num for page_num in result.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2)]
+    result = Product.query.filter(*filters).paginate(page=page, per_page=limit)
+    iter_pages = [
+        page_num
+        for page_num in result.iter_pages(
+            left_edge=1, right_edge=1, left_current=1, right_current=2
+        )
+    ]
     return {
         "total": result.total,
         "page": result.page,
@@ -65,14 +83,32 @@ def create():
     return product_schema.jsonify(product), 201
 
 
+@blueprint_product.route("/categories", methods=["GET"])
+def index_category():
+    category_schema = CategorySchema(many=True)
+    result = Category.query.all()
+    return category_schema.jsonify(result), 200
+
+
 @blueprint_product.route("/populate/", methods=["GET"])
 def populate():
-    inspector = sa.inspect(current_app.db.engine)
     samples = request.args.get("samples", 30, type=int)
-    if inspector.has_table("product"):
-        Product.__table__.drop(current_app.db.engine)
-    Product.__table__.create(current_app.db.engine)
-    for product in ProductFactory.build_batch(samples):
-        current_app.db.session.add(product)
+    current_app.db.drop_all()
+    current_app.db.create_all()
+    categories = [
+        "Banheiros",
+        "Cama, Mesa e Banho",
+        "Climatização e Ventilação",
+        "Decoração",
+    ]
+
+    for category in categories:
+        category_factory = CategoryFactory.build(name=category)
+        current_app.db.session.add(category_factory)
         current_app.db.session.commit()
+        for product in ProductFactory.build_batch(int(samples / len(categories))):
+            product.category = category_factory
+            current_app.db.session.add(product)
+            current_app.db.session.commit()
+
     return {"message": "Product table populated!"}, 200
