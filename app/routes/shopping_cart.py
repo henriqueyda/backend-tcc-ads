@@ -13,12 +13,23 @@ blueprint_shopping_cart = Blueprint(
 )
 
 
+@blueprint_shopping_cart.route("/<user_id>", methods=["GET"])
+def get_one(user_id):
+    r: redis.client.Redis = current_app.redis
+    shopping_cart = r.json().get(user_id)
+    if shopping_cart:
+        return r.json().get(user_id)
+    return {"message": "Shopping cart not found"}, 404
+
+
 @blueprint_shopping_cart.route("/add", methods=["POST"])
 def add():
     r: redis.client.Redis = current_app.redis
     body = request.json
 
     result = Product.query.get_or_404(body["product_id"])
+    if result.quantity - body["quantity"] < 0:
+        return {"message": "Out of stock"}, 200
 
     with r.pipeline() as pipe:
         if not r.exists(body["user_id"]):
@@ -40,10 +51,29 @@ def add():
                 {
                     "quantity": 0,
                     "price": float(result.price),
+                    "name": result.name,
+                    "description": result.description,
                     "created_at": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     "updated_at": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                 },
             )
+
+        pipe.json().set(
+            body["user_id"],
+            Path(f".items.{body['product_id']}.price"),
+            float(result.price),
+        )
+        pipe.json().set(
+            body["user_id"],
+            Path(f".items.{body['product_id']}.name"),
+            result.name,
+        )
+        pipe.json().set(
+            body["user_id"],
+            Path(f".items.{body['product_id']}.description"),
+            result.description,
+        )
+
         pipe.json().numincrby(
             body["user_id"],
             Path(f".items.{body['product_id']}.quantity"),
@@ -65,4 +95,10 @@ def add():
             datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
         )
         pipe.execute()
+
+    Product.query.filter(Product.id == body["product_id"]).update(
+        {"quantity": result.quantity - body["quantity"]}
+    )
+    current_app.db.session.commit()
+
     return r.json().get(body["user_id"])
