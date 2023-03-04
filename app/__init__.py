@@ -18,7 +18,9 @@ def create_app():
     Migrate(app, app.db, compare_type=True)
 
     from .routes.product import blueprint_product
+    from .routes.shopping_cart import blueprint_shopping_cart
 
     app.register_blueprint(blueprint_product)
+    app.register_blueprint(blueprint_shopping_cart)
 
     return app
