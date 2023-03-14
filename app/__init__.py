@@ -19,8 +19,12 @@ def create_app():
 
     from .routes.product import blueprint_product
     from .routes.shopping_cart import blueprint_shopping_cart
+    from .routes.order import blueprint_order
+    from .routes.user import blueprint_user
 
     app.register_blueprint(blueprint_product)
     app.register_blueprint(blueprint_shopping_cart)
+    app.register_blueprint(blueprint_order)
+    app.register_blueprint(blueprint_user)
 
     return app

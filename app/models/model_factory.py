@@ -30,5 +30,5 @@ class ProductFactory(factory.alchemy.SQLAlchemyModelFactory):
     color = factory.Faker("color_name")
     expiration_date = factory.Faker("date_between", start_date="today", end_date="+10y")
     quantity = factory.Faker("random_int")
-    picture = "https://cec-a.akamaihd.net/img-prod/images/standard/cimento-todas-as-obras-50kg-votorantim-1228972-foto-a644e307-1919-4c4b-8737-b62144cc1932.png"
+    picture = factory.LazyFunction(lambda: generate_random_pics())
     price = factory.Faker("pyfloat", left_digits=4, right_digits=2, positive=True)

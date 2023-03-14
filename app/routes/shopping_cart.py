@@ -53,6 +53,7 @@ def add():
                     "price": float(result.price),
                     "name": result.name,
                     "description": result.description,
+                    "picture": result.picture,
                     "created_at": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     "updated_at": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                 },
@@ -102,3 +103,42 @@ def add():
     current_app.db.session.commit()
 
     return r.json().get(body["user_id"])
+
+
+@blueprint_shopping_cart.route("/remove", methods=["POST"])
+def remove():
+    r: redis.client.Redis = current_app.redis
+    body = request.json
+
+    result = Product.query.get_or_404(body["product_id"])
+
+    with r.pipeline() as pipe:
+        if not r.exists(body["user_id"]):
+            return {"message": "Shopping cart not found"}, 404
+
+        products_ids = r.json().objkeys(body["user_id"], Path(".items"))
+        if str(body["product_id"]) not in products_ids:
+            return {"message": "Product not found"}, 404
+
+        cart_quantity = r.json().get(
+            body["user_id"], Path(f".items.{body['product_id']}.quantity")
+        )
+        pipe.json().delete(body["user_id"], Path(f".items.{body['product_id']}"))
+        pipe.execute()
+
+    Product.query.filter(Product.id == body["product_id"]).update(
+        {"quantity": result.quantity + int(cart_quantity)}
+    )
+    current_app.db.session.commit()
+
+    return r.json().get(body["user_id"])
+
+
+@blueprint_shopping_cart.route("/<user_id>", methods=["DELETE"])
+def delete(user_id):
+    r: redis.client.Redis = current_app.redis
+    shopping_cart = r.json().get(user_id)
+    if shopping_cart:
+        r.delete(user_id)
+        return {"message": "Shopping cart deleted"}, 200
+    return {"message": "Shopping cart not found"}, 404

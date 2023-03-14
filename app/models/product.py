@@ -16,6 +16,7 @@ class Product(db.Model):
     price = db.Column(db.Numeric(10, 2))
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
     category = relationship("Category", back_populates="products")
+    order_products = relationship("OrderProduct", back_populates="product")
 
 
 class Category(db.Model):
