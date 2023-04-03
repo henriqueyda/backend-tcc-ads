@@ -4,6 +4,7 @@ from functools import partial
 from flask import Blueprint
 from flask import current_app
 from flask import request
+from flask_jwt_extended import jwt_required
 
 from ..models.model_factory import CategoryFactory
 from ..models.model_factory import ProductFactory
@@ -15,7 +16,7 @@ from app.models.product import Product
 blueprint_product = Blueprint("product", __name__, url_prefix="/product")
 
 
-@blueprint_product.route("/", methods=["GET"])
+@blueprint_product.route("", methods=["GET"])
 def index():
     page = request.args.get("page", 1, type=int)
     limit = request.args.get("limit", 10, type=int)
@@ -47,6 +48,7 @@ def index():
 
 
 @blueprint_product.route("/<product_id>", methods=["GET"])
+@jwt_required()
 def get_one(product_id):
     product_schema = ProductSchema()
     result = Product.query.get_or_404(product_id)
@@ -54,6 +56,7 @@ def get_one(product_id):
 
 
 @blueprint_product.route("/<product_id>", methods=["DELETE"])
+@jwt_required()
 def delete(product_id):
     result = Product.query.get_or_404(product_id)
     current_app.db.session.delete(result)
@@ -62,6 +65,7 @@ def delete(product_id):
 
 
 @blueprint_product.route("/<product_id>", methods=["PUT"])
+@jwt_required()
 def update(product_id):
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
@@ -72,7 +76,8 @@ def update(product_id):
     return product_schema.jsonify(result.first_or_404()), 200
 
 
-@blueprint_product.route("/", methods=["POST"])
+@blueprint_product.route("", methods=["POST"])
+@jwt_required()
 def create():
     product_schema = ProductSchema()
     date = request.json.get("expiration_date")
@@ -84,6 +89,7 @@ def create():
 
 
 @blueprint_product.route("/categories", methods=["GET"])
+@jwt_required()
 def index_category():
     category_schema = CategorySchema(many=True)
     result = Category.query.all()
@@ -91,6 +97,7 @@ def index_category():
 
 
 @blueprint_product.route("/populate/", methods=["GET"])
+@jwt_required()
 def populate():
     samples = request.args.get("samples", 30, type=int)
     current_app.db.drop_all()

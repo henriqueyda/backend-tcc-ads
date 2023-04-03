@@ -3,6 +3,8 @@ from datetime import datetime
 from flask import Blueprint
 from flask import current_app
 from flask import request
+from flask_jwt_extended import current_user
+from flask_jwt_extended import jwt_required
 
 from app.models.order import Order
 from app.models.order import OrderProduct
@@ -13,14 +15,16 @@ from app.schemas.order import OrderSchema
 blueprint_order = Blueprint("order", __name__, url_prefix="/order")
 
 
-@blueprint_order.route("/<user_id>", methods=["GET"])
-def get_user_orders(user_id):
+@blueprint_order.route("", methods=["GET"])
+@jwt_required()
+def get_user_orders():
     order_schema = OrderSchema(many=True)
-    result = Order.query.filter_by(user_id=user_id).all()
+    result = Order.query.filter_by(user_id=current_user.id).all()
     return order_schema.dump(result), 200
 
 
 @blueprint_order.route("/", methods=["GET"])
+@jwt_required()
 def get_all_orders():
     order_schema = OrderSchema(many=True)
     result = Order.query.all()
@@ -28,6 +32,7 @@ def get_all_orders():
 
 
 @blueprint_order.route("/<order_id>", methods=["DELETE"])
+@jwt_required()
 def delete(order_id):
     result = Order.query.get_or_404(order_id)
     current_app.db.session.delete(result)
@@ -36,8 +41,8 @@ def delete(order_id):
 
 
 @blueprint_order.route("/", methods=["POST"])
+@jwt_required()
 def create():
-    user_id = request.json.get("user_id", None)
     total_price = request.json.get("total_price", None)
     delivery_address = request.json.get("delivery_address", None)
     delivery_city = request.json.get("delivery_city", None)
@@ -48,7 +53,7 @@ def create():
     now = datetime.now().strftime("%Y-%m-%d")
     order_schema = OrderSchema()
     order = Order(
-        user_id=user_id,
+        user_id=current_user.id,
         total_price=total_price,
         delivery_address=delivery_address,
         delivery_city=delivery_city,
@@ -65,6 +70,7 @@ def create():
 
 
 @blueprint_order.route("/<order_id>/product/<product_id>", methods=["POST"])
+@jwt_required()
 def add_order_product(order_id, product_id):
     Order.query.get_or_404(order_id)
 
@@ -84,6 +90,7 @@ def add_order_product(order_id, product_id):
 
 
 @blueprint_order.route("/<order_id>/product", methods=["GET"])
+@jwt_required()
 def get_order_product(order_id):
     order_schema = OrderProductSchema(many=True)
     result = OrderProduct.query.filter_by(order_id=order_id)
@@ -91,6 +98,7 @@ def get_order_product(order_id):
 
 
 @blueprint_order.route("/<order_id>/product/<product_id>", methods=["DELETE"])
+@jwt_required()
 def delete_order_product(order_id, product_id):
     result = OrderProduct.query.filter_by(
         order_id=order_id, product_id=product_id

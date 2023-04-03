@@ -12,4 +12,5 @@ class User(db.Model):
     phone = db.Column(db.String(255))
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
+    is_admin = db.Column(db.Boolean)
     orders = relationship("Order", back_populates="user")
