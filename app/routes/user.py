@@ -54,12 +54,11 @@ def get_current_user():
 @jwt_required()
 def update(user_id):
     user_schema = UserSchema()
-    result = User.query.get_or_404(user_id)
+    now = datetime.now().strftime("%Y-%m-%d")
+    result = User.query.filter(User.id == user_id)
     body = request.json
-    if "password" in body:
-        body["password"] = generate_password_hash(body["password"], method="sha256")
-    for key, value in body.items():
-        setattr(result, key, value)
+    body["updated_at"] = now
+    result.update(body)
     current_app.db.session.commit()
     return user_schema.jsonify(result), 200
 
