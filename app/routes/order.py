@@ -15,7 +15,7 @@ from app.schemas.order import OrderSchema
 blueprint_order = Blueprint("order", __name__, url_prefix="/order")
 
 
-@blueprint_order.route("", methods=["GET"])
+@blueprint_order.route("/current-user", methods=["GET"])
 @jwt_required()
 def get_user_orders():
     order_schema = OrderSchema(many=True)
@@ -31,6 +31,39 @@ def get_all_orders():
     return order_schema.dump(result), 200
 
 
+@blueprint_order.route("/<order_id>", methods=["GET"])
+@jwt_required()
+def get_order(order_id):
+    order_schema = OrderSchema()
+    result = Order.query.get_or_404(order_id)
+    return order_schema.dump(result), 200
+
+
+@blueprint_order.route("/<order_id>/payment", methods=["POST"])
+@jwt_required()
+def payment(order_id):
+    order = Order.query.get_or_404(order_id)
+    checkout_session = current_app.stripe.checkout.Session.create(
+        line_items=[
+            {
+                "price_data": {
+                    "product_data": {
+                        "name": order_products.product.name,
+                    },
+                    "unit_amount": int(order_products.product.price * 100),
+                    "currency": "brl",
+                },
+                "quantity": order_products.quantity,
+            }
+            for order_products in order.order_products
+        ],
+        payment_method_types=["card"],
+        mode="payment",
+        success_url=f"http://localhost:8080/Pedidos",
+    )
+    return checkout_session.url
+
+
 @blueprint_order.route("/<order_id>", methods=["DELETE"])
 @jwt_required()
 def delete(order_id):
@@ -40,7 +73,7 @@ def delete(order_id):
     return "", 204
 
 
-@blueprint_order.route("/", methods=["POST"])
+@blueprint_order.route("", methods=["POST"])
 @jwt_required()
 def create():
     total_price = request.json.get("total_price", None)

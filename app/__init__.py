@@ -1,3 +1,6 @@
+import os
+
+import stripe
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -24,6 +27,13 @@ def create_app():
         return User.query.filter_by(email=identity).one_or_none()
 
     Migrate(app, app.db, compare_type=True)
+    stripe_keys = {
+        "secret_key": os.environ["STRIPE_SECRET_KEY"],
+        "publishable_key": os.environ["STRIPE_PUBLISHABLE_KEY"],
+    }
+
+    stripe.api_key = stripe_keys["secret_key"]
+    app.stripe = stripe
 
     from .routes.product import blueprint_product
     from .routes.shopping_cart import blueprint_shopping_cart

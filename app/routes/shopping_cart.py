@@ -128,6 +128,11 @@ def remove():
         cart_quantity = r.json().get(
             current_user.id, Path(f".items.{body['product_id']}.quantity")
         )
+        pipe.json().numincrby(
+            current_user.id,
+            Path(".total_price"),
+            float(-1 * result.price * body["quantity"]),
+        )
         pipe.json().delete(current_user.id, Path(f".items.{body['product_id']}"))
         pipe.execute()
 
