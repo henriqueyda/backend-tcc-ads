@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required
 
 from app.models.order import Order
 from app.models.order import OrderProduct
+from app.models.order import Status
 from app.models.product import Product
 from app.schemas.order import OrderProductSchema
 from app.schemas.order import OrderSchema
@@ -139,3 +140,12 @@ def delete_order_product(order_id, product_id):
     current_app.db.session.delete(result)
     current_app.db.session.commit()
     return "", 204
+
+
+@blueprint_order.route("/<order_id>", methods=["POST"])
+@jwt_required()
+def cancel_order(order_id):
+    order = Order.query.filter(Order.id == order_id)
+    order.update({"status": Status.cancelled})
+    current_app.db.session.commit()
+    return "Order cancelled", 200
